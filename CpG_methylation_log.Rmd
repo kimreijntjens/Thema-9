@@ -1,0 +1,198 @@
+---
+title: '"exploration data analysis of CpG methylation data"'
+author: "Kim Reijntjens"
+date: "20-9-2022"
+output:
+   pdf_document
+  
+---
+
+
+# relevance of the project
+
+CpG sites are often described in the study called epigenetics:
+"where genetic expression is not the direct result of the information stored in the nucleotide sequence of DNA. Instead, the DNA is altered in a way that affects its expression. These changes are stable in the sense that they are transmitted during cell division to progeny cells, and
+often through gametes to future generations. The precise molecular mechanism of imprinting and
+other epigenetic events is still a matter for conjecture, but it seems certain that DNA methylation is involved. In most eukaryotes, methyl groups can be added to the carbon atom at
+position 5 in cytosine (see Chapter 10) as a result of the activity of the enzyme DNA methyltransferase. Methyl groups are added when the dinucleotide CpG or groups of CpG units
+(called CpG islands) are present along a DNA chain. DNA methylation is a reasonable mechanism for
+establishing a molecular imprint, since there is evidence that a high level of methylation can inhibit gene activity and that active genes (or their regulatory sequences) are
+often undermethylated." (Klug, William S.;Cummings, Michael R.;Spencer, Charlotte A.;Michael A. Palladino - Concepts of genetics)
+
+because alterations in the genome and activity of the genes are associated with common diseases such as cancer or asthma, it is important to know if smoking can be the cause of this. If this is the case than in further research there can be looked at which CpG sites are affected by smoking, and if there is a relation with the affected CpG sites and the ones associated with diseases like cancer and asthma.
+(Klug, William S.;Cummings, Michael R.;Spencer, Charlotte A.;Michael A. Palladino - Concepts of genetics)
+
+
+
+
+
+# goal
+can CpG methylation show a relation with smoking, based on a prediction whether a patient is smoking or non-smoking using differences in CpG site values.
+
+For this we use the dataset of 683 patients. the dataset has 683 rows and 24 columns containing the patients; age, gender, smoking status and 20 CpG site values. 
+the dataset was already compressed to 20 CpG site values sites per sample. The original dataset was composed for a study titled "Differential DNA methylation in Rheumatoid arthritis"
+(NCBI series GSE42861) Where the original dataset contained 485577 rows with methylation data per sample 
+(https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE42861)
+(https://www.kaggle.com/datasets/thomaskonstantin/cpg-values-of-smoking-and-non-smoking-patients)
+
+
+
+## exploration of the data
+
+```{r, options(tinytex.verbose = TRUE) }
+
+library(knitr)
+library(kableExtra)
+patient_data <- read.csv(file = "data/Smoker_Epigenetic_df.csv")
+head(patient_data)
+
+#View(patient_data)
+ 
+knitr::kable(summary(patient_data),  booktabs = T,  caption = " CpG values dataset ")  %>%
+kable_styling(latex_options = "striped")
+
+
+str(patient_data)
+
+```
+
+We created our own codebook with a description per column.
+The details for the description where present on kaggle website for the dataset, but not in a codebook format.
+
+```{r}
+code_book <- read.table(file = "archive/code_book.txt", sep = ";", header = T)
+kable(code_book, caption = "A codebook for the data ")
+```
+
+When we look at the summary of the patient data we see in the column of the methylation data that there are 62 missing values. these are the same rows where the gender column has a capital F for female and M for male. these rows will be deleted because it gives us no information for the CpG sites. 
+
+```{r}
+#delete missing values
+library(tidyr)
+patient_data <- patient_data %>% drop_na()
+
+# check if all column have no missing data
+kable(apply(patient_data, 2, function(x) any(is.na(x))), caption = "Table to show per column whether there are missing values FALSE= no missing values found / TRUE = missing values found")
+```
+
+
+check if there is no missing data left in the other columns.
+
+the Gender column contains abbreviations fore male and female. 
+we changed this for the full name for a better readability.
+
+```{r}
+
+str(patient_data)
+library(dplyr)
+
+
+
+
+levels(patient_data$Gender) <- c("female", "female", "male", "male")
+
+
+
+
+#head(patient_data)
+
+# delete rij GSM aangezien deze uniek zijn en dit niet gaat werken met datamining
+
+patient_data <- patient_data[-1]
+head(patient_data[,1:4])
+```
+we also deleted the GMS column because is hold unique row identifiers. Fitting a tree with unique row identifiers in a dataset will split every single row in one node, which will give you a high predictive value. > This will cause overfitting. 
+
+Now that we took a general look at the data lets make some visualization to get a more in depth overview
+```{r, out.width= "100%", fig.cap="Title: age distribution of the patients compared to male and female " }
+library(ggplot2)
+
+
+ggplot(patient_data, aes(x=Gender, y=Age, fill=Gender)) + 
+  geom_boxplot( )  + scale_fill_manual(values=c("pink", "royalblue")) +
+  ggtitle("distribution of patient ages")+
+  ylab("age in years")
+```
+if we compare the ages of patients like we did in this figure, we can see that the distribution of ages for male and female very alike 
+
+```{r, out.width= "100%", fig.cap="Title: age distribution of the patients without seperation of the gender "}
+ggplot(data=patient_data, aes(Age)) +
+  geom_histogram(fill='pink', color="black", alpha=0.3) +
+  ggtitle("distribution of patient ages")+
+  ylab("number of patients") + xlab("age in years")
+  
+```
+Then the same age distribution but without seperation of the gender. We notice that the most patients are >45 
+
+```{r}
+ggplot(patient_data, aes(x=Smoking.Status, y=Age, fill=Smoking.Status)) + 
+  geom_boxplot( )  + scale_fill_manual(values=c("red", "green")) +
+  ggtitle("Smoking status of the patients")+
+  ylab("age in years")
+```
+the younger patients in the dataset are non smoking. 
+
+To get a quick overview of the most useful graphs with this data we use a ggpairs plot.
+```{r}
+ggplot(data=patient_data, aes(Smoking.Status) ) +
+  geom_bar(fill='pink', color="black", alpha=0.3) +
+  ggtitle("number of smoking and non-smoking patients ")+
+  ylab("number of patients")
+```
+conclusion: high number of patients are smoking. We will not remove data to get an even distribution of smoking and non smoking, but we do need to keep this in mind when using datamining.
+
+
+```{r}
+ggplot(data=patient_data, aes(Gender) ) +
+  geom_bar(fill=c('pink',"royalblue"), color="black", alpha=0.3) +
+  ggtitle("number of male and female patients ")+
+  ylab("number of patients")
+```
+majority of the patients are female. 
+
+```{r}
+ggplot(data=patient_data, aes(Smoking.Status) ) + ggtitle("number of male and female patients combined with smoking status ") + 
+  geom_bar(aes(fill=Gender)) +
+  ylab("number of patients")
+```
+If we look a the two figures above is almost looks like the they are the same. and that all females are smoking and all males non smoking. So we made another plot to compare the both values in one.
+
+
+Then we wanted to explore if there can be seen differences in the CpG values of males and females. 
+```{r,out.width= "100%", fig.cap="Title: CpG values in percentages comparison of males and females "}
+library(tidyverse)
+long_data <- pivot_longer(data = patient_data, cols = 4:23, names_to = "body_part", values_to = "size")
+
+long_data %>%  ggplot(aes(x = size,  colour = Gender)) +
+    geom_density(show.legend = TRUE) + 
+  ggtitle("CpG values of males and females ") +
+   facet_wrap(~body_part, ncol = 7) +    scale_color_manual(values=c("deeppink3", "royalblue") ) 
+```
+
+As you can see the figure, the male and female CpG values are very different from eachother. 
+now we want to see if we get the same result for smoking and non smoking patients. which would mean that smoking changes your CpG values.
+
+```{r,out.width= "100%", fig.cap="Title: CpG values in percentages comparison of smoking and non smoking patients"}
+long_data <- pivot_longer(data = patient_data, cols = 4:23, names_to = "body_part", values_to = "size")
+
+long_data %>%  ggplot(aes(x = size,  colour = Smoking.Status)) +
+    geom_density(show.legend = TRUE) +
+  ggtitle("CpG values of smoking and non smoking patients ") +
+   facet_wrap(~body_part, ncol = 5) +    scale_color_manual(values=c("red", "green")) 
+```
+
+
+
+
+de dubbele curves zijn voor man en vrouw 
+
+
+
+annova test
+
+
+standaard deviatie 
+T-test per waarde om te zien of de lijen tussen roker en niet roker significant vershillen van elkaar
+of hetzelfde voor significiantie tussen man en vrouw 
+
+
