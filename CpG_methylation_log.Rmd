@@ -39,17 +39,20 @@ the dataset was already compressed to 20 CpG site values sites per sample. The o
 
 ## exploration of the data
 
-```{r, options(tinytex.verbose = TRUE) }
+```{r }
 
-library(knitr)
-library(kableExtra)
+
+
+library(pander)
 patient_data <- read.csv(file = "data/Smoker_Epigenetic_df.csv")
 head(patient_data)
 
 #View(patient_data)
  
-knitr::kable(summary(patient_data),  booktabs = T,  caption = " CpG values dataset ")  %>%
-kable_styling(latex_options = "striped")
+
+#panderOptions("table.continues.affix")
+
+pander::pander(summary(patient_data), caption = "Summary with basic statistics about the data colums")
 
 
 str(patient_data)
@@ -61,7 +64,7 @@ The details for the description where present on kaggle website for the dataset,
 
 ```{r}
 code_book <- read.table(file = "archive/code_book.txt", sep = ";", header = T)
-kable(code_book, caption = "A codebook for the data ")
+pander::pander(code_book)
 ```
 
 When we look at the summary of the patient data we see in the column of the methylation data that there are 62 missing values. these are the same rows where the gender column has a capital F for female and M for male. these rows will be deleted because it gives us no information for the CpG sites. 
@@ -70,9 +73,9 @@ When we look at the summary of the patient data we see in the column of the meth
 #delete missing values
 library(tidyr)
 patient_data <- patient_data %>% drop_na()
-
+pander::pander(apply(patient_data, 2, function(x) any(is.na(x))), caption = "Table to show per column whether there are missing values FALSE= no missing values found / TRUE = missing values found")
 # check if all column have no missing data
-kable(apply(patient_data, 2, function(x) any(is.na(x))), caption = "Table to show per column whether there are missing values FALSE= no missing values found / TRUE = missing values found")
+
 ```
 
 
@@ -87,16 +90,17 @@ str(patient_data)
 library(dplyr)
 
 
+library(dplyr)
+
+patient_data <- patient_data %>% mutate(Gender=recode(Gender, 
+                         " f"="female",
+                         " m"="male"))
 
 
-levels(patient_data$Gender) <- c("female", "female", "male", "male")
 
 
 
-
-#head(patient_data)
-
-# delete rij GSM aangezien deze uniek zijn en dit niet gaat werken met datamining
+#delete row GSM because this is a unique row identifier per patient and is no use for datamining
 
 patient_data <- patient_data[-1]
 head(patient_data[,1:4])
@@ -132,7 +136,7 @@ ggplot(patient_data, aes(x=Smoking.Status, y=Age, fill=Smoking.Status)) +
 ```
 the younger patients in the dataset are non smoking. 
 
-To get a quick overview of the most useful graphs with this data we use a ggpairs plot.
+
 ```{r}
 ggplot(data=patient_data, aes(Smoking.Status) ) +
   geom_bar(fill='pink', color="black", alpha=0.3) +
@@ -143,8 +147,9 @@ conclusion: high number of patients are smoking. We will not remove data to get 
 
 
 ```{r}
+
 ggplot(data=patient_data, aes(Gender) ) +
-  geom_bar(fill=c('pink',"royalblue"), color="black", alpha=0.3) +
+  geom_bar(fill=c('pink',"royalblue"), alpha=0.3) +
   ggtitle("number of male and female patients ")+
   ylab("number of patients")
 ```
@@ -155,7 +160,7 @@ ggplot(data=patient_data, aes(Smoking.Status) ) + ggtitle("number of male and fe
   geom_bar(aes(fill=Gender)) +
   ylab("number of patients")
 ```
-If we look a the two figures above is almost looks like the they are the same. and that all females are smoking and all males non smoking. So we made another plot to compare the both values in one.
+If we look a the two figures above is almost looks like the they are the same. So we made another plot to compare the both values in one.
 
 
 Then we wanted to explore if there can be seen differences in the CpG values of males and females. 
@@ -180,15 +185,84 @@ long_data %>%  ggplot(aes(x = size,  colour = Smoking.Status)) +
   ggtitle("CpG values of smoking and non smoking patients ") +
    facet_wrap(~body_part, ncol = 5) +    scale_color_manual(values=c("red", "green")) 
 ```
+the green and red curve are on top of eachother which means that there is not much difference in the CpG values for smoking and non smoking patients. This gives us already a lot of information for the research goal. the double curve in this graph stands for male and female. 
+
+
+
+```{r}
+
+patient_data$Gender = as.factor(patient_data$Gender)
+patient_data$Smoking.Status = as.factor(patient_data$Smoking.Status)
+
+
+plot(patient_data$cg00050873 ~ patient_data$Age, col=patient_data$Gender)
+
+mod <- lm(patient_data$cg00050873~patient_data$Age)
+abline(mod)
+```
+
+```{r}
+plot(patient_data$cg00050873 ~ patient_data$Age, col=patient_data$Smoking.Status)
+
+mod <- lm(patient_data$cg00050873~patient_data$Age)
+abline(mod)
+```
+this also shows that age does not affect the differance in CpG value
+
+```{r}
+df <- subset(patient_data, select = c(4,23) )
+row.names(df) <- paste(patient_data$Gender, row.names(df), sep="_") 
+df$Gender <- NULL
+
+head(df)
+
+df_pca <- prcomp(df)
+
+plot(df_pca$x[,1], df_pca$x[,2])
+#----------------------------------------------------------------
+
+```
+```{r}
+df_out <- as.data.frame(df_pca$x)
+df_out$group <- sapply( strsplit(as.character(row.names(df)), "_"), "[[", 1 )
+head(df_out)
+
+```
+```{r}
+library(ggplot2)
+library(grid)
+library(gridExtra)
+
+p<-ggplot(df_out,aes(x=PC1,y=PC2,color=group ))
+p<-p+geom_point() +    scale_color_manual(values=c("pink", "royalblue"))
+p
+```
+
+```{r}
+df <- subset(patient_data, select = c(4,23) )
+row.names(df) <- paste(patient_data$Smoking.Status, row.names(df), sep="_") 
+df$Smoking.Status <- NULL
+
+head(df)
+
+df_pca <- prcomp(df)
+
+plot(df_pca$x[,1], df_pca$x[,2])
+
+df_out <- as.data.frame(df_pca$x)
+df_out$group <- sapply( strsplit(as.character(row.names(df)), "_"), "[[", 1 )
+head(df_out)
+
+p<-ggplot(df_out,aes(x=PC1,y=PC2,color=group ))
+p<-p+geom_point() +    scale_color_manual(values=c("red", "green"))
+p
+```
 
 
 
 
-de dubbele curves zijn voor man en vrouw 
 
 
-
-annova test
 
 
 standaard deviatie 
