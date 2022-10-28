@@ -264,9 +264,58 @@ p
 
 
 
+verbeteren:
+- code book daadwerkelijk gebruiken voor misschien titel van een plot of het omzeten male/female
+- na aantonen dat alle na ook alle data missen en het niet verschillende regels zijn. 
+- librarys op 1 plek vooraan
 
-standaard deviatie 
-T-test per waarde om te zien of de lijen tussen roker en niet roker significant vershillen van elkaar
-of hetzelfde voor significiantie tussen man en vrouw 
+
+
+```{r}
+
+
+
+patient_data <- patient_data%>%select(-Smoking.Status,everything())
+write.csv(patient_data,"C:/Users/kimre/Documents/thema-9/data/Clean_data_smoking_status.csv")
+
+
+patient_data <- patient_data%>%select(-Gender,everything())
+write.csv(patient_data,"C:/Users/kimre/Documents/thema-9/data/Clean_data_Gender.csv")
+```
+
+
+cost sensitive:
+liever wel dat het algoritme aantooont dat iemand rookt dus false positive dan aantonen dat iemand niet rookt wanneer dit wel het geval is false negative. omdat dit dan zou aangeven dat er wel verschil zou zijn in CpG values zonder dat iemand rookt.
+
+
+```{r}
+test_results <- read.csv(file = "archive/test_results_weka.csv", sep = ";")
+pander::pander(test_results, caption = "weka first try test results")
+```
+
+
+```{r, out.width = "400px"}
+knitr::include_graphics("C:/Users/kimre/Documents/Thema-9/images/weka_experimenter_standaard.png")
+```
+
+na het aanpassen van J48 is die sterk omhoog gegaan waardoor die dichter bij de performance van zero R kwam te liggen. 
+zo dicht dat die niet meer significant lager was in performance
+
+
+
+```{r, out.width = "400px"}
+knitr::include_graphics("C:/Users/kimre/Documents/Thema-9/images/J48_improvement.png")
+```
+
+```{r}
+library(foreign)
+
+library(plotROC)
+test <- read.arff("C:/Users/kimre/Documents/Thema-9/archive/ROC_j48_standard.arff")
+library(ROCR)
+
+plot(test$`False Positive Rate`, test$`True Positive Rate`)
+
+```
 
 
