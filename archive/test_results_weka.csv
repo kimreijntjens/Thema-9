@@ -1,0 +1,8 @@
+;ZeroR;OneR;NaiveBayes;SMO;Nearest Neighbor.;J48.;Random Forest;Simple Logistic
+Speed;0;0.03;0.04;0.16;0;0.09;0.53;0.39
+True Positive;428;373;138;428;313;356;396;424
+False Positive;193;159;44;193;129;141;173;191
+False Negative;0;55;290;0;115;72;32;4
+True Negative;0;34;149;0;64;52;30;2
+accuracy;68.921;65.539;46.216;68.921;60.709;65.701;66.989;68.599
+incorrect;31.079;34.461;53.784;31.079;39.291;34.299;33.011;31.401

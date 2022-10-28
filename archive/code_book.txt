@@ -1,0 +1,30 @@
+column;description;type
+GSM;The GSM with which the full sample data can be located on NCBI;factor
+Smoking.status;Smoking status - never = never smoked\ current = currently smoking;factor
+Gender;Patient Gender;factor
+Age;Patient Age;numeric
+cg00050873;Methylation in Current Island;numeric
+cg00212031;Methylation in Current Island;numeric
+cg00213748;Methylation in Current Island;numeric
+cg00214611;Methylation in Current Island;numeric
+cg00455876;Methylation in Current Island;numeric
+cg01707559;Methylation in Current Island;numeric
+cg02004872;Methylation in Current Island;numeric
+cg02011394;Methylation in Current Island;numeric
+cg02050847;Methylation in Current Island;numeric
+cg02233190;Methylation in Current Island;numeric
+cg02494853;Methylation in Current Island;numeric
+cg02839557;Methylation in Current Island;numeric
+cg02842889;Methylation in Current Island;numeric
+cg03052502;Methylation in Current Island;numeric
+cg03155755;Methylation in Current Island;numeric
+cg03244189;Methylation in Current Island;numeric
+cg03443143;Methylation in Current Island;numeric
+cg03155755;Methylation in Current Island;numeric
+cg03244189;Methylation in Current Island;numeric
+cg03443143;Methylation in Current Island;numeric
+cg03683899;Methylation in Current Island;numeric
+cg03695421;Methylation in Current Island;numeric
+cg03706273;Methylation in Current Island;numeric
+
+
