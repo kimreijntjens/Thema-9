@@ -308,14 +308,107 @@ knitr::include_graphics("C:/Users/kimre/Documents/Thema-9/images/J48_improvement
 ```
 
 ```{r}
-library(foreign)
-
-library(plotROC)
-test <- read.arff("C:/Users/kimre/Documents/Thema-9/archive/ROC_j48_standard.arff")
-library(ROCR)
-
-plot(test$`False Positive Rate`, test$`True Positive Rate`)
+# library(foreign)
+# 
+# library(plotROC)
+# ZeroR <- read.arff("C:/Users/kimre/Documents/Thema-9/archive/ROC_zeroR_standard.arff")
+# j48_1 <- read.arff("C:/Users/kimre/Documents/Thema-9/archive/ROC_J48_standard.arff")
+# j48_2 <- read.arff("C:/Users/kimre/Documents/Thema-9/archive/ROC_J48_M_20.arff")
+# j48_3 <- read.arff("C:/Users/kimre/Documents/Thema-9/archive/ROC_J48_M_20_batch_200.arff")
+# j48_4 <- read.arff("C:/Users/kimre/Documents/Thema-9/archive/ROC_J48_M_20_batch_200_C_0.09.arff")
+# 
+# 
+# df1 <- ZeroR %>% select(6:7)
+# df2 <- j48_1 %>% select(6:7)
+# df3 <- j48_2 %>% select(6:7)
+# df4 <- j48_3 %>% select(6:7)
+# df5 <- j48_4 %>% select(6:7)
+# 
+#  ggplot() + geom_line(data=df1, aes(x="True Positive Rate", y = "False Positive Rate"), color= "red") + 
+#   geom_line(data=df2, aes(x="True Positive Rate",y = "False Positive Rate"), color = "blue") + 
+#   geom_line(data=df3, aes(x="True Positive Rate", y = "False Positive Rate"), color = "green")
+# 
+# p1 <-ggplot(data=df1,  aes(x=`False Positive Rate`, y=`True Positive Rate`)) +
+#     geom_line() 
+# p1
+#   
+# p2 <- ggplot(data=df2,  aes(x=`False Positive Rate`, y=`True Positive Rate`)) +
+#     geom_line() 
+# p2 
+# 
+# p3 <- ggplot(data=df3,  aes(x=`False Positive Rate`, y=`True Positive Rate`)) +
+#     geom_line() 
+# p3 
+# 
+# p4 <- ggplot(data=df4,  aes(x=`False Positive Rate`, y=`True Positive Rate`)) +
+#     geom_line() 
+# p4 
+# 
+# p5 <- ggplot(data=df5,  aes(x=`False Positive Rate`, y=`True Positive Rate`)) +
+#     geom_line() 
+# p5 
+# 
+# grid.arrange(p1, p2, p3, p4, p5, ncol = 2)
 
 ```
+
+we hebben ook geprobeerd om alle andere waarden weg te gooien zodat gebruik moest gaan maken van de CPG values als classificatie. dit gaf bijna geen verschil alleen J48 werd aanzienlijk slechter omdat deze wel gebruikt maakte van de gender en age voorheen bij het bouwen van een tree. de rest van de alogithmen werken er niet beter of slechter om.
+
+
+
+
+```{r, out.width="33%", fig.align = "center",  fig.show='hold'}
+
+knitr::include_graphics(
+  c( "C:/Users/kimre/Documents/Thema-9/images/ROC_zeroR.png", "C:/Users/kimre/Documents/Thema-9/images/ROC_J48_standaard.png" )
+  )
+  
+knitr::include_graphics(
+  c( "C:/Users/kimre/Documents/Thema-9/images/ROC_J48_Batch200.png", "C:/Users/kimre/Documents/Thema-9/images/ROC_J48_M20_batch200.png" )
+  )
+  
+knitr::include_graphics(
+  c( "C:/Users/kimre/Documents/Thema-9/images/ROC_J48_Batch200_M20_C0.25.png" )
+  )  
+```
+we hebben ook nog de cost sensitive classiefer geprobeerd echter deze verbeterde niks daarom ook niet opnieuw een resultaat die ik toon aangezien deze roc cuve hetzelfde was als het resultaat hierboven.
+
+
+niet zulke goeie roc curves ondanks dat de score beter word, word de ROC slechter.
+
+
+
+
+
+
+wanneer we hetzelfde proberen met het voorspellen van geslacht als classifier dan scoren we heel ook ook de ROC curves zijn zo goed als perfect. dit hadden we al verwacht aangezien in de data exploration er al naar voren kwam dat het een duidelijk verschil was tussen de cpg values van het mannelijke en vrouwelijke geslacht. 
+
+```{r,  out.width="33%", fig.align = "center",  fig.show='hold'}
+knitr::include_graphics("C:/Users/kimre/Documents/Thema-9/images/ROC_naivebayes_GENDER.png" )
+
+```
+ik laat niet alle roc curves zien omdat de meeste zo goed scoren dat ze er toch hetzelfde uit zien en sommige zo perfect dat ze op ROC 1 uitkomen. dit is de roc curve van naive bayes is bij het classificeren op smoking status als slechtst uit de test kwam 
+
+```{r,  out.width="33%", fig.align = "center",  fig.show='hold'}
+knitr::include_graphics("C:/Users/kimre/Documents/Thema-9/images/experimenter_GENDER.png" )
+
+```
+"v" statistically significant
+
+
+
+
+
+
+ 
+
+
+
+
+arff file gebruiken
+
+weg schrijven naar een bestandje
+toon geven van de new classified data
+
 
 
