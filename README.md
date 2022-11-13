@@ -1,9 +1,9 @@
 # README #
 
-## Thema-9 kim reijntjens
+## Thema-9 Kim Reijntjens
 
 the folder CpG_methylation_EDA contains a full documented data exploration. this is documented in a Rmarkdown but also printed as pdf.
-this document also holds the proces of exploring the weka algortihms in on our dataset.
+This document also holds the process of exploring the weka algorithms on our dataset.
 
 all data used for this can be found in the folder: data 
 
