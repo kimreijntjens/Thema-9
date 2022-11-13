@@ -2,7 +2,9 @@
 title: "CpG methylation data analysis results"
 author: "Kim Reijntjens"
 date: "2022-10-03"
-output: pdf_document
+output: pdf_document:
+    toc: true 
+
 header-includes:
  \usepackage{float}
  \floatplacement{figure}{H}
@@ -11,17 +13,17 @@ header-includes:
 
 # Introduction
 
-DNA methylation is a process plays a part in gene regulation. Methylation involves the addition or removal of methyl groups to or from the bases and sugars in DNA. methylation occurs on the cytosine of CG locations in the DNA. methylatable CG sequences also called CpG sequences are concentrated in CpG-rich regions called CpG islands, located at the 5'ends of genes. 
+DNA methylation is a process plays a part in gene regulation. Methylation involves the addition or removal of methyl groups to or from the bases and sugars in DNA. methylation occurs on the cytosine of CG locations in the DNA. methylated CG sequences also called CpG sequences are concentrated in CpG-rich regions called CpG islands, located at the 5'ends of genes. 
 Methylation prevents the formation of certain base pairs, and thereby the accessibility for interactions with other components. methylation adds a hydrophobic character to some of the tRNA regions. that may be important for their interaction with proteins that regulate synthesis.
- (Klug, William S.;Cummings, Michael R.;Spencer, Charlotte A.;Michael A. Palladino - Concepts of genetics)
-(Tymoczko, J. L., Berg, J. M. & Stryer, L. (2015, 1 januari). Biochemistry: A Short Course. Macmillan Publishers.)
+(Klug,William,Cummings,Michael,Spencer,Charlotte,Michael,Palladino)
+(Tymoczko, 2015)
 
 
 
 ## Relavance of the project
 
 Because alterations in the genome and activity of the genes are associated with common diseases such as cancer or asthma, it is important to know if smoking can be the cause of this. If this is the case than in further research there can be looked at which CpG sites are affected by smoking, and if there is a relation with the affected CpG sites and the ones associated with diseases like cancer and asthma. 
-(Klug, William S.;Cummings, Michael R.;Spencer, Charlotte A.;Michael A. Palladino - Concepts of genetics)
+(Klug,William,Cummings,Michael,Spencer,Charlotte,Michael,Palladino)
 
 ## 1.1 Goal  
 
@@ -32,8 +34,7 @@ Can CpG methylation show a relation with smoking, based on a prediction whether 
 For this we use the dataset of 683 patients. the dataset has 683 rows and 24 columns containing the patients; age, gender, smoking status and 20 CpG site values. 
 The dataset was already compressed to 20 CpG site values sites per sample. The original dataset was composed for a study titled "Differential DNA methylation in Rheumatoid arthritis"
 (NCBI series GSE42861) Where the original dataset contained 485577 rows with methylation data per sample 
-(https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE42861)
-(https://www.kaggle.com/datasets/thomaskonstantin/cpg-values-of-smoking-and-non-smoking-patients)
+(NCBI)(KAGGLE)
 
 
 # Loading the data
@@ -46,8 +47,7 @@ patient_data <- read.csv(file = "data/Smoker_Epigenetic_df.csv")
 
 pander::pander(head(patient_data), caption = " An overview from the fist lines of the data")
 ```
-The first four rows are information about the patient and the remaining 20 are genetic information about the CpG sites of the patients. The values show a percentage of methylation in these rows.
-We deleted the GMS column because is hold unique row identifiers. Fitting a tree with unique row identifiers in a dataset will split every single row in one node, which will give you a high predictive value. > This will cause overfitting.
+The first four rows are information about the patient and the remaining 20 are genetic information about the CpG sites of the patients. GSM is an identification number per patient, NCBI shows the full data that was collected for that patient. Smoking status tell us whether a patient is currently smoking or not. Gender and age are self-explanatory. The following 20 column are the CpG site values, these values show a percentage of methylation in these rows. Which can result in a repressed gene activity. We deleted the GMS column because is hold unique row identifiers. Fitting a tree with unique row identifiers in a dataset will split every single row in one node, which will give you a high predictive value. > This will cause overfitting.
 
 ```{r, echo = FALSE}
 pander::pander(summary(patient_data), caption = "Summary with basic statistics about the data colums")
@@ -72,7 +72,7 @@ patient_data <- patient_data[-1]
 
 ```
 
-When we look at the summary of the patient data we see in the column of the methylation data that there are 62 missing values (NA's). These are the same rows where the gender column has a capital F for female and M for male. these rows will be deleted because it gives us no information for the CpG sites on the genetic attributes. 
+When we look at the summary of the patient data we see in the column of the methylation data that there are 62 missing values. If we scroll true the data quickly we see that there are some rows who miss all CpG values, those are the ones that show up as 62 missing in every CpG values. these rows will be deleted because it gives us no information for the CpG sites.
 
 # Data exploratory analysis
 
@@ -178,5 +178,15 @@ Male and female methylation is shown to be different, we cant go deeper in detai
 
 The goal was to understand the given dataset and to clean the data. it is yet to discover if CpG methylation can show a relation with smoking, based on a prediction whether a patient is smoking or non-smoking using differences in CpG site values.
 The data shows good prospect for the use of machine learning because of the the patterns and correlation that is found in the data. We already saw that there is a difference in CpG values for gender. Smoking status had not yet shown a clear relation with the CpG values. This will be researched further using machine learning.
+
+
+
+# Referances 
+
+- GSE42861. (n.d.). Retrieved from ncbi: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE42861
+Klug, W. S., Cummings, M. R., Spencer, C. A., & Palladino, M. A. (n.d.). concepts of genetics.
+- thomaskonstantin. (n.d.). Retrieved from kaggle: (https://www.kaggle.com/datasets/thomaskonstantin/cpg-values-of-smoking-and-non-smoking-patients
+- Tymoczko, J. L. (2015). Biochemistery: A short course. macmilian publishers.
+
 
 
