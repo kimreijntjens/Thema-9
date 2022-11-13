@@ -1,0 +1,395 @@
+---
+title: '"exploration data analysis of CpG methylation data"'
+author: "Kim Reijntjens"
+date: "20-9-2022"
+output:
+   pdf_document:
+     toc: true 
+---
+
+
+# relevance of the project
+
+CpG sites are often described in the study called epigenetics:
+"where genetic expression is not the direct result of the information stored in the nucleotide sequence of DNA. Instead, the DNA is altered in a way that affects its expression. These changes are stable in the sense that they are transmitted during cell division to progeny cells, and
+often through gametes to future generations. The precise molecular mechanism of imprinting and
+other epigenetic events is still a matter for conjecture, but it seems certain that DNA methylation is involved. In most eukaryotes, methyl groups can be added to the carbon atom at
+position 5 in cytosine (see Chapter 10) as a result of the activity of the enzyme DNA methyltransferase. Methyl groups are added when the dinucleotide CpG or groups of CpG units
+(called CpG islands) are present along a DNA chain. DNA methylation is a reasonable mechanism for
+establishing a molecular imprint, since there is evidence that a high level of methylation can inhibit gene activity and that active genes (or their regulatory sequences) are
+often undermethylated."
+(Klug,William,Cummings, Michael,S pencer, Charlotte,Michael,Palladino)
+
+because alterations in the genome and activity of the genes are associated with common diseases such as cancer or asthma, it is important to know if smoking can be the cause of this. If this is the case than in further research there can be looked at which CpG sites are affected by smoking, and if there is a relation with the affected CpG sites and the ones associated with diseases like cancer and asthma.(tymoczko,2015)
+
+
+
+
+
+# Collection of the data
+can CpG methylation show a relation with smoking, based on a prediction whether a patient is smoking or non-smoking using differences in CpG site values.
+
+For this we use the dataset of 683 patients. the dataset has 683 rows and 24 columns containing the patients; age, gender, smoking status and 20 CpG site values. 
+the dataset was already compressed to 20 CpG site values sites per sample. The original dataset was composed for a study titled "Differential DNA methylation in Rheumatoid arthritis"
+(NCBI series GSE42861) Where the original dataset contained 485577 rows with methylation data per sample 
+(NCBI) (KAGGLE)
+
+# librarys and installations
+```{r, message=FALSE}
+packages <- c("pander", "tidyr", "tidyverse", "dplyr", "ggplot2", "grid", "gridExtra", "foreign", "knitr")
+
+invisible(lapply(packages, library, character.only= TRUE))
+
+panderOptions("table.continues", "")
+
+
+
+```
+ 
+
+
+# Data exploration analyses
+
+## Data structure and codebook 
+
+```{r }
+
+patient_data <- read.csv(file = "C:/Users/kimre/Documents/Thema-9/data/Smoker_Epigenetic_df.csv")
+head(patient_data)
+
+
+
+pander::pander(summary(patient_data), caption = "Summary with basic statistics about the data colums")
+
+
+str(patient_data)
+
+```
+
+We created our own codebook with a description per column.
+The details for the description where present on kaggle website for the dataset, but not in a codebook format.
+
+```{r}
+code_book <- read.table(file = "C:/Users/kimre/Documents/Thema-9/archive/code_book.txt", sep = ";", header = T)
+pander::pander(code_book)
+```
+
+
+When we look at the summary of the patient data we see in the column of the methylation data that there are 62 missing values. If we scroll true the data quickly we see that there are some rows who miss all CpG values, those are the ones that show up as 62 missing in every CpG values. these rows will be deleted because it gives us no information for the CpG sites. 
+
+```{r}
+#delete missing values
+patient_data <- patient_data %>% drop_na()
+pander::pander(apply(patient_data, 2, function(x) any(is.na(x))), caption = "Table to show per column whether there are missing values FALSE= no missing values found / TRUE = missing values found")
+
+
+```
+
+
+check if there is no missing data left in the other columns.
+
+the Gender column contains abbreviations fore male and female. 
+we changed this for the full name for a better readability.
+
+```{r}
+
+str(patient_data)
+
+patient_data <- patient_data %>% mutate(Gender=recode(Gender, 
+                         " f"="female",
+                         " m"="male"))
+
+
+
+
+
+#delete row GSM because this is a unique row identifier per patient and is no use for datamining
+
+patient_data <- patient_data[-1]
+head(patient_data[,1:4])
+```
+
+we also deleted the GMS column because is hold unique row identifiers. Fitting a tree with unique row identifiers in a dataset will split every single row in one node, which will give you a high predictive value. > This will cause overfitting. 
+
+## distribution graphs
+
+Now that we took a general look at the data lets make some visualization to get a more in depth overview
+```{r, out.width= "100%", fig.cap="Title: age distribution of the patients compared to male and female " }
+
+
+ggplot(patient_data, aes(x=Gender, y=Age, fill=Gender)) + 
+  geom_boxplot( )  + scale_fill_manual(values=c("pink", "royalblue")) +
+  ggtitle("distribution of patient ages")+
+  ylab("age in years")
+```
+if we compare the ages of patients like we did in this figure, we can see that the distribution of ages for male and female very alike 
+
+```{r, out.width= "100%", fig.cap="Title: age distribution of the patients without seperation of the gender "}
+ggplot(data=patient_data, aes(Age)) +
+  geom_histogram(fill='pink', color="black", alpha=0.3) +
+  ggtitle("distribution of patient ages")+
+  ylab("number of patients") + xlab("age in years")
+  
+```
+Then the same age distribution but without separation of the gender. We notice that the most patients are >45 
+
+```{r}
+ggplot(patient_data, aes(x=Smoking.Status, y=Age, fill=Smoking.Status)) + 
+  geom_boxplot( )  + scale_fill_manual(values=c("red", "green")) +
+  ggtitle("Smoking status of the patients")+
+  ylab("age in years")
+```
+the younger patients in the dataset are non smoking. 
+
+
+```{r}
+ggplot(data=patient_data, aes(Smoking.Status) ) +
+  geom_bar(fill='pink', color="black", alpha=0.3) +
+  ggtitle("number of smoking and non-smoking patients ")+
+  ylab("number of patients")
+```
+High number of patients are smoking. We will not remove data to get an even distribution of smoking and non smoking, but we do need to keep this in mind when using datamining.
+
+
+```{r}
+
+ggplot(data=patient_data, aes(Gender) ) +
+  geom_bar(fill=c('pink',"royalblue"), alpha=0.3) +
+  ggtitle("number of male and female patients ")+
+  ylab("number of patients")
+```
+majority of the patients are female. 
+
+```{r}
+ggplot(data=patient_data, aes(Smoking.Status) ) + ggtitle("number of male and female patients combined with smoking status ") + 
+  geom_bar(aes(fill=Gender)) +
+  ylab("number of patients")
+```
+If we look a the two figures above is almost looks like the they are the same. So we made another plot to compare the both values in one.
+
+## density graphs
+
+Then we wanted to explore if there can be seen differences in the CpG values of males and females. 
+```{r,out.width= "100%", fig.cap="Title: CpG values in percentages comparison of males and females "}
+long_data <- pivot_longer(data = patient_data, cols = 4:23, names_to = "body_part", values_to = "size")
+
+long_data %>%  ggplot(aes(x = size,  colour = Gender)) +
+    geom_density(show.legend = TRUE) + 
+  ggtitle("CpG values of males and females ") +
+   facet_wrap(~body_part, ncol = 7) +    scale_color_manual(values=c("deeppink3", "royalblue") ) 
+```
+
+As you can see the figure, the male and female CpG values are very different from each other. 
+now we want to see if we get the same result for smoking and non smoking patients. which would mean that smoking changes your CpG values.
+
+```{r,out.width= "100%", fig.cap="Title: CpG values in percentages comparison of smoking and non smoking patients"}
+long_data <- pivot_longer(data = patient_data, cols = 4:23, names_to = "body_part", values_to = "size")
+
+long_data %>%  ggplot(aes(x = size,  colour = Smoking.Status)) +
+    geom_density(show.legend = TRUE) +
+  ggtitle("CpG values of smoking and non smoking patients ") +
+   facet_wrap(~body_part, ncol = 5) +    scale_color_manual(values=c("red", "green")) 
+```
+the green and red curve are on top of each other which means that there is not much difference in the CpG values for smoking and non smoking patients. This gives us already a lot of information for the research goal. the double curve in this graph stands for male and female. 
+
+## principal component analysis 
+
+Principal component analysis (PCA) can be used to find underlying relations in the data and enabling the visualization of multidimensional data.
+
+```{r, out.width= "100%", fig.cap="Title: male and female differances based on cpg value column: cg00050873"}
+
+patient_data$Gender = as.factor(patient_data$Gender)
+patient_data$Smoking.Status = as.factor(patient_data$Smoking.Status)
+
+
+plot(patient_data$cg00050873 ~ patient_data$Age, col=patient_data$Gender, xlab = "age ", ylab = "cg00050873", main = "CpG values compared to age")
+
+mod <- lm(patient_data$cg00050873~patient_data$Age)
+abline(mod)
+```
+Above we see if we compare the CpG value to the Age column that we have found an underlying group. The red part show the male patients and the black part the female patients. We know this because we have seen before that there are more females in the dataset. this confirms the underlying group that we expected there to be from the distribution plot in figure 3 and 4. 
+
+```{r,  out.width= "100%", fig.cap="Title: male and female differances based on cpg value column: cg00050873"}
+
+plot(patient_data$cg00050873 ~ patient_data$Age, col=patient_data$Smoking.Status, xlab = "age ", ylab = "cg00050873", main = "CpG values compared to age")
+
+mod <- lm(patient_data$cg00050873~patient_data$Age)
+abline(mod)
+```
+This time (figure 6) we did not colour the Gender of the patients but the smoking status. This also confirms what we saw before in the distribution of figure 3 and 4, because now that we coloured the smoking status of the patients there is no longer a underlying group to be seen. This figure also shows that age does not have a big impact on the CpG value. 
+
+
+```{r, out.width= "100%", fig.cap="Title: clustering of the male and female gender in the dataset"}
+df <- subset(patient_data, select = c(4,23) )
+row.names(df) <- paste(patient_data$Gender, row.names(df), sep="_") 
+df$Gender <- NULL
+
+head(df)
+
+df_pca <- prcomp(df)
+
+plot(df_pca$x[,1], df_pca$x[,2], main = "PCA plot of underlying group clusters")
+
+
+```
+```{r, include=FALSE}
+df_out <- as.data.frame(df_pca$x)
+df_out$group <- sapply( strsplit(as.character(row.names(df)), "_"), "[[", 1 )
+head(df_out)
+
+```
+```{r, out.width= "100%", fig.cap="Title: clustering of the male and female gender in the dataset (coloured) "}
+
+p<-ggplot(df_out,aes(x=PC1,y=PC2,color=group ))
+p<-p+geom_point() + ggtitle("PCA plot of underlying group clusters (coloured)") +   scale_color_manual(values=c("pink", "royalblue"))
+p
+```
+
+We coloured the groups to see which one would be female en which one male. As expected the biggest one is female and the smaller one male. 
+
+```{r, out.width= "100%", fig.cap="Title: clustering in the CpG data coloured on smoking status "}
+df <- subset(patient_data, select = c(4,23) )
+row.names(df) <- paste(patient_data$Smoking.Status, row.names(df), sep="_") 
+df$Smoking.Status <- NULL
+
+head(df)
+
+df_pca <- prcomp(df)
+
+plot(df_pca$x[,1], df_pca$x[,2])
+
+df_out <- as.data.frame(df_pca$x)
+df_out$group <- sapply( strsplit(as.character(row.names(df)), "_"), "[[", 1 )
+head(df_out)
+
+p<-ggplot(df_out,aes(x=PC1,y=PC2,color=group ))
+p<-p+geom_point() + ggtitle("PCA plot of underlying groups in smoking status") +    scale_color_manual(values=c("red", "green"))
+p
+```
+Same again we performed PCA for the dataset and still the 2 groups show up, only this time we colour the smoking status. The PCA still does not show any relation in groups for the CpG values and the smoking status
+
+# exploration with Weka
+
+## prepearing the data for weka 
+
+Moving on to the exploration of the data with Weka, we hope to confirm the what we already know after this data analysis. 
+We don't expect high results in the performance of predicting the smoking status accurate. That is why we will also try to predict the Gender of the patient based our dataset
+
+
+We prepared the data for weka by moving the column that we want to classify to the last column. This is the default format that Weka uses
+```{r}
+
+
+
+patient_data <- patient_data%>%select(-Smoking.Status,everything())
+write.csv(patient_data,"C:/Users/kimre/Documents/thema-9/data/Clean_data_smoking_status.csv")
+
+
+patient_data <- patient_data%>%select(-Gender,everything())
+write.csv(patient_data,"C:/Users/kimre/Documents/thema-9/data/Clean_data_Gender.csv")
+```
+
+
+Then we tried all the standard algorithms and compared there performances side by side.
+This performance was on the dataset with smoking status as classifier.
+As expected the algorithms did not perform very well.
+
+
+```{r}
+test_results <- read.csv(file = "C:/Users/kimre/Documents/Thema-9/archive/test_results_weka.csv", sep = ";")
+pander::pander(test_results, caption = "weka first try test results")
+```
+ZeroR is the most basic working Algorithm that chooses the column to be classified and parts it in the 2 groups. In this case smoking and non-smoking. That's why 68 percent is accurate because That's the 68 percent that are currently smoking. ZeroR guesses toward the most command value. The higher performing algorithms are significantly different from ZeroR shown in the figure below with an *, in this case the algorithms perform significantly lower than ZeroR 
+
+```{r, out.width = "400px", fig.cap="Title: Weka experimenter with oneR/J48/nearest neighbor in a two-tailed test against ZeroR"}
+knitr::include_graphics("C:/Users/kimre/Documents/Thema-9/images/weka_experimenter_standaard.png")
+```
+
+J48 is an high performing algorithm with standard parameters. J48 is also one of the best machine learning algorithms to examine the data categorically and continuously. It used a discussion tree and is very good in finding patterns in bulk data. For this reason we tried to improve J48 even a bit more by optimizing different parameters.
+After these adjustments the J48 model improved enough to not be significantly lower then ZeroR. 
+
+
+```{r, out.width = "400px", fig.cap="Weka experimenter performance of J48 with different parameters"}
+knitr::include_graphics("C:/Users/kimre/Documents/Thema-9/images/J48_improvement.png")
+```
+
+
+
+Because J48 uses all columns we tried optimizing the model by deleting some colon which are not important if we only focus on the CpG values. these colon are age and gender. In that way we force the model to use the CpG values for making the tree. The result was worse than before because it does need the age and gender to make up an accurate tree. the other algorithms performed the same without the deleted columns, but also did not improve anything.
+
+## ROC curves
+
+Roc curve is a performance measurement for the classification problems at different threshold settings. The curves is a plot of the Tue positive rate over the False positive rate for different cot-off points.
+
+We've drawn the ROC curves of J48 performance with the different parameters to see if the ROC improves alongside with its performance. The graphs are compared to ZeroR because this is for us the highest performing algorithm 
+```{r, out.width="33%", fig.align = "center",  fig.show='hold', fig.cap= "ROC ZeroR compared to J48's different parameters improvement"}
+
+knitr::include_graphics(
+  c( "C:/Users/kimre/Documents/Thema-9/images/ROC_zeroR.png", "C:/Users/kimre/Documents/Thema-9/images/ROC_J48_standaard.png" )
+  )
+  
+knitr::include_graphics(
+  c( "C:/Users/kimre/Documents/Thema-9/images/ROC_J48_Batch200.png", "C:/Users/kimre/Documents/Thema-9/images/ROC_J48_M20_batch200.png" )
+  )
+  
+knitr::include_graphics(
+  c( "C:/Users/kimre/Documents/Thema-9/images/ROC_J48_Batch200_M20_C0.25.png" )
+  )  
+```
+
+In the figures above it shows that the ROC curve does not really improve the same as the performance of J48 improves. 
+
+
+We also tried the cost sensitive classifier where we put a cost on the false positives or false negatives to see if it would improve the performance or ROC curve.
+We will not show the results because it did not improve anything
+
+
+
+As expected no algorithm will perform better than ZeroR. 
+Now we will try the same for classifying the Gender of a patient based on the CpG values.
+
+
+
+```{r,  out.width="33%", fig.align = "center",  fig.show='hold', fig.cap="ROC curve naive bayes"}
+knitr::include_graphics("C:/Users/kimre/Documents/Thema-9/images/ROC_naivebayes_GENDER.png" )
+
+```
+
+The figure above shows the super accurate performance of the naive bayes ROC curve. All the algorithms have a ROC curve looking like this because they all work very well. we've chosen to show the NaiveBayes algorithm because this one was the worst performing when looking at classifying the smoking status. Some algorithms have an ROC curve of 1. this is the most ideal curve you can get.
+
+```{r,  out.width="33%", fig.align = "center",  fig.show='hold', fig.cap= " Weka experimenter performance of all algorthims classifing Gender"}
+knitr::include_graphics("C:/Users/kimre/Documents/Thema-9/images/experimenter_GENDER.png" )
+
+```
+We see a high performance of all algorithms some even scoring the perfection of 100%.
+the "v" means that they are statistically significant from ZeroR. 
+
+
+```{r}
+Clean_data_smoking_status <- patient_data%>%select(-Smoking.Status,everything())
+write.csv(patient_data,"C:/Users/kimre/Documents/thema-9/data/Clean_data_smoking_status.csv")
+
+Clean_data_smoking_status$Smoking.Status <- as.factor(Clean_data_smoking_status$Smoking.Status)
+Clean_data_smoking_status$Gender <- as.factor(Clean_data_smoking_status$Gender)
+write.arff(Clean_data_smoking_status, file = "C:/Users/kimre/Documents/WekaRunner_kopie/testdata/Clean_data_smoking_status.arff")
+```
+
+## Closing chapter
+Because ZeroR simply predicts the majority category, there is no real predictability power. 
+We can say that there can not be made a prediction whether a patient is smoking or not based on its CpG values. This relates to our research goal whether we could see a difference in the CpG values and methylation of a smoking or non-smoking patient. To expand the research we did predict what the Gender of a patient was based on there CpG values, with the outcome off a very high accuracy. Which indicates that there is a strong difference in male and female CpG values and gene activity. 
+
+
+# referances 
+
+- GSE42861. (n.d.). Retrieved from ncbi: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE42861
+Klug, W. S., Cummings, M. R., Spencer, C. A., & Palladino, M. A. (n.d.). concepts of genetics.
+- thomaskonstantin. (n.d.). Retrieved from kaggle: (https://www.kaggle.com/datasets/thomaskonstantin/cpg-values-of-smoking-and-non-smoking-patients
+- Tymoczko, J. L. (2015). Biochemistery: A short course. macmilian publishers.
+
+
+
+
+
+
+
+
